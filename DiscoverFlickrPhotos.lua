@@ -9,6 +9,9 @@ local LrFunctionContext = import 'LrFunctionContext'
 local LrXml = import 'LrXml'
 local LrHttp = import 'LrHttp'
 
+local Flickr = require 'Flickr'
+local Utils = require 'Utils'
+
 
 local log = LrLogger()
 log:enable('print')
@@ -54,21 +57,18 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
     local date_taken_to_remote = {}
     for _, published_collection in ipairs(publishedCollections) do
 
-        local url = 'http://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=46912733cea0913d152057b8d6a8da81&extras=date_taken&per_page=500&format=rest&photoset_id=' .. published_collection:getRemoteId()
-        log:info(url)
-        local body, headers = LrHttp.get(url)
-        local root = LrXml.parseXml(body)
-        if root:attributes().stat.value ~= 'ok' then
-            log:info(body)
-            error('Flickr response was not OK')
-        end
+        local res = Flickr.call('flickr.photosets.getPhotos', {
+            extras = 'date_taken',
+            per_page = 500,
+            photoset_id = published_collection:getRemoteId(),
+        })
 
-        local photoset = root:childAtIndex(1)
-        for i = 1, photoset:childCount() do
-            local photo = photoset:childAtIndex(i)
-            photo.owner = photoset:attributes().owner.value
-            local photo_id = photo:attributes().id.value
-            local raw_date_taken = photo:attributes().datetaken.value
+        local photoset = res.photoset[1]
+        for _, photo in pairs(photoset.photo) do
+
+            photo.owner = photoset['@owner']
+            local photo_id = photo['@id']
+            local raw_date_taken = photo['@datetaken']
             -- "2013-01-03 12:50:18"
             local date_taken = LrDate.timeFromComponents(
                 string.match(raw_date_taken, '^(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)$')
@@ -87,9 +87,10 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
             if remote_link then
                 local published_collection = remote_link[1]
                 local photo_node = remote_link[2]
-                local remote_id = photo_node:attributes().id.value
+                local remote_id = photo_node['@id']
                 log:info('Link', photo.localIdentifier, 'to', remote_id)
 
+                --[[
                 catalog:withWriteAccessDo('PublishLinker.DiscoverFlickrPhotos.Link', function()
                     published_collection:addPhotoByRemoteId(
                         photo,
@@ -98,6 +99,7 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
                         true
                     )
                 end)
+                ]]
 
             end
         end

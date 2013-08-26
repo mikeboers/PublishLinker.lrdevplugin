@@ -17,6 +17,10 @@ return {
             title = "Discover Flickr Photos",
             file  = "DiscoverFlickrPhotos.lua",
         },
+        {
+            title = "Dev Sandbox",
+            file  = "Sandbox.lua",
+        },
 
     },
 
