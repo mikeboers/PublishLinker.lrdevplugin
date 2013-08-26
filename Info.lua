@@ -13,6 +13,10 @@ return {
             title = "Add Remote Collection",
             file  = "AddRemoteCollection.lua",
         },
+        {
+            title = "Discover Flickr Photos",
+            file  = "DiscoverFlickrPhotos.lua",
+        },
 
     },
 
