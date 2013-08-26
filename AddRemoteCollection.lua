@@ -15,15 +15,12 @@ local append = function(t, x) t[#t + 1] = x end
 
 local servicePluginNames = {
     ["com.adobe.lightroom.export.flickr"] = 'Flickr',
+    ["com.adobe.lightroom.export.facebook"] = 'Facebook',
 }
 
 
-
--- We use LrTasks instead of a bare LrFunctionContext in order to get
--- automatic error reporting.
-
 LrTasks.startAsyncTask(function()
-LrFunctionContext.callWithContext('PublishLinker.LinkCollection', function(context)
+LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(context)
 
     local catalog = LrApplication.activeCatalog()
     local services = catalog:getPublishServices()
@@ -116,9 +113,11 @@ LrFunctionContext.callWithContext('PublishLinker.LinkCollection', function(conte
         title = "Link Published Collection",
         contents = c,
     }
-    if res ~= 'ok' then return nil end
+    if res ~= 'ok' then return end
 
-    catalog:withWriteAccessDo('PublishLinker.LinkCollection.Create', function()
+    -- Make sure there isn't a collision.
+    
+    catalog:withWriteAccessDo('PublishLinker.AddRemoteCollection.Create', function()
         local collection = props.service.service:createPublishedCollection(props.name, nil, true)
         collection:setRemoteId(props.remoteId)
         collection:setRemoteUrl(props.remoteUrl)

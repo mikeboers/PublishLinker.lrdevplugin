@@ -10,8 +10,8 @@ return {
     LrLibraryMenuItems = {
 
         {
-            title = "Link Collection",
-            file  = "LinkCollection.lua",
+            title = "Add Remote Collection",
+            file  = "AddRemoteCollection.lua",
         },
 
     },
