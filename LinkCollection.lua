@@ -1,55 +1,60 @@
 local LrApplication = import 'LrApplication'
-local LrFunctionContext = import 'LrFunctionContext'
 local LrBinding = import 'LrBinding'
 local LrDialogs = import 'LrDialogs'
 local LrView = import 'LrView'
 local LrLogger = import 'LrLogger'
 local LrTasks = import 'LrTasks'
-
-local KnownServices = require 'KnownServices'
+local LrFunctionContext = import 'LrFunctionContext'
 
 
 local log = LrLogger()
 log:enable('print')
 
 
-local catalog = LrApplication.activeCatalog()
-local sources = catalog:getActiveSources()
+local append = function(t, x) t[#t + 1] = x end
+
+local servicePluginNames = {
+    ["com.adobe.lightroom.export.flickr"] = 'Flickr',
+}
 
 
---[[
-if #sources ~= 1 then
-    LrDialogs.message('Please select one published collection.', nil, 'critical')
-    return nil
-end
 
-local catalog = sources[1]
-if catalog:type() ~= "LrPublishedCollection" then
-    LrDialogs.message("Please select a published collection.", nil, 'critical')
-    return nil
-end
-]]
+-- We use LrTasks instead of a bare LrFunctionContext in order to get
+-- automatic error reporting.
 
-LrFunctionContext.postAsyncTaskWithContext('PublishLinker_LinkCollection', function(context)
+LrTasks.startAsyncTask(function()
+LrFunctionContext.callWithContext('PublishLinker.LinkCollection', function(context)
 
+    local catalog = LrApplication.activeCatalog()
     local services = catalog:getPublishServices()
-    local collectionItems = {}
-    local append = function(t, x) t[#t + 1] = x end
+
+    local serviceMenuItems = {}
     for _, service in ipairs(services) do
 
-        local serviceDef = KnownServices.serviceById(service:getPluginId())
-        if serviceDef then
-            append(collectionItems, {
-                title = serviceDef.name .. ': (new)',
-                value = #collectionItems, 
-            })
-        end
+        local pluginId = service:getPluginId()
+        local serviceType = servicePluginNames[pluginId] or pluginId
+        append(serviceMenuItems, {
+            title = serviceType .. ': ' .. service:getName(),
+            value = {
+                service = service,
+            }
+        })
+
     end
 
     local ui = LrView.osFactory()
 
     local props = LrBinding.makePropertyTable(context)
-    props.remoteUrl = 'http://www.flickr.com/photos/mikeboers/sets/72157635207321829/'
+    
+    props:addObserver('remoteUrl', function(props, key, newValue)
+        local id = string.match(newValue, '(%d+)[^%d]*$')
+        if id then
+            props.remoteId = id
+        end
+    end)
+    
+    props.remoteUrl = ''
+    props.service = serviceMenuItems[1].value
 
     -- Create the contents for the dialog.
     local c = ui:column {
@@ -59,12 +64,13 @@ LrFunctionContext.postAsyncTaskWithContext('PublishLinker_LinkCollection', funct
 
         ui:row {
             ui:static_text {
-                title = 'Collection: ',
+                title = 'Service: ',
                 alignment = 'right',
                 width = LrView.share 'label_width', 
             },
             ui:popup_menu {
-                items = collectionItems,
+                items = serviceMenuItems,
+                value = LrView.bind 'service'
             },
         },
 
@@ -80,6 +86,30 @@ LrFunctionContext.postAsyncTaskWithContext('PublishLinker_LinkCollection', funct
             },
         },
 
+        ui:row {
+            ui:static_text {
+                title = 'Remote ID: ',
+                alignment = 'right',
+                width = LrView.share 'label_width',
+            },
+            ui:edit_field {
+                value = LrView.bind 'remoteId',
+                width = 250,
+            },
+        },
+
+        ui:row {
+            ui:static_text {
+                title = 'Name: ',
+                alignment = 'right',
+                width = LrView.share 'label_width',
+            },
+            ui:edit_field {
+                value = LrView.bind 'name',
+                width = 250,
+            },
+        },
+
     }
 
     local res = LrDialogs.presentModalDialog {
@@ -88,19 +118,12 @@ LrFunctionContext.postAsyncTaskWithContext('PublishLinker_LinkCollection', funct
     }
     if res ~= 'ok' then return nil end
 
-
-    local username, remoteId = string.match(props.remoteUrl, 'http://www.flickr.com/photos/(%w+)/sets/(%d+)/')
-    log:info('remote ID', remoteId)
-
-    LrTasks.startAsyncTask(function()
-        catalog:withWriteAccessDo('Create Published Collection', function()
-            log:info('creating collection...')
-            local collection = flickrService:createPublishedCollection(remoteId, nil, true)
-            log:info('created collection', collection)
-            collection:setRemoteId(remoteId)
-            collection:setRemoteUrl(props.remoteUrl)
-        end)
+    catalog:withWriteAccessDo('PublishLinker.LinkCollection.Create', function()
+        local collection = props.service.service:createPublishedCollection(props.name, nil, true)
+        collection:setRemoteId(props.remoteId)
+        collection:setRemoteUrl(props.remoteUrl)
     end)
 
+end)
 end)
 
