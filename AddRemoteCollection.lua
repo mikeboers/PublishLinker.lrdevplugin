@@ -115,8 +115,20 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
     }
     if res ~= 'ok' then return end
 
+    local service = props.service.service
+
     -- Make sure there isn't a collision.
-    
+    -- TODO: This should really check the full graph.
+    for _, collection in ipairs(service:getChildCollections()) do
+        if collection:getRemoteId() == props.remoteId then
+            LrDialogs.showError("This collection already exists.")
+            return
+        elseif collection:getRemoteURL() == props.remoteUrl then
+            LrDialogs.showError("This collection already exists.")
+            return
+        end 
+    end
+
     catalog:withWriteAccessDo('PublishLinker.AddRemoteCollection.Create', function()
         local collection = props.service.service:createPublishedCollection(props.name, nil, true)
         collection:setRemoteId(props.remoteId)
