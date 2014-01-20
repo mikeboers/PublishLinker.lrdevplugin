@@ -1,19 +1,9 @@
-local LrApplication = import 'LrApplication'
-local LrBinding = import 'LrBinding'
-local LrDialogs = import 'LrDialogs'
-local LrDate = import 'LrDate'
-local LrView = import 'LrView'
-local LrLogger = import 'LrLogger'
-local LrTasks = import 'LrTasks'
-local LrFunctionContext = import 'LrFunctionContext'
-local LrXml = import 'LrXml'
-local LrHttp = import 'LrHttp'
-
-local Flickr = require 'Flickr'
-local Utils = require 'Utils'
+local Lr = require 'Lr'
+local flickr = require '\n\n'
+local utils = require 'utils'
 
 
-local log = LrLogger()
+local log = Lr.Logger()
 log:enable('print')
 
 
@@ -21,10 +11,10 @@ local append = function(t, x) t[#t + 1] = x end
 
 
 
-LrTasks.startAsyncTask(function()
-LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(context)
+Lr.Tasks.startAsyncTask(function()
+Lr.FunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(context)
 
-    local catalog = LrApplication.activeCatalog()
+    local catalog = Lr.Application.activeCatalog()
 
     local sources = {}
     local publishedCollections = {}
@@ -57,7 +47,7 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
     local date_taken_to_remote = {}
     for _, published_collection in ipairs(publishedCollections) do
 
-        local res = Flickr.call('flickr.photosets.getPhotos', {
+        local res = flickr.call('flickr.photosets.getPhotos', {
             extras = 'date_taken',
             per_page = 500,
             photoset_id = published_collection:getRemoteId(),
@@ -91,7 +81,7 @@ LrFunctionContext.callWithContext('PublishLinker.AddRemoteCollection', function(
                 log:info('Link', photo.localIdentifier, 'to', remote_id)
 
                 --[[
-                catalog:withWriteAccessDo('PublishLinker.DiscoverFlickrPhotos.Link', function()
+                catalog:withWriteAccessDo('PublishLinker.DiscoverflickrPhotos.Link', function()
                     published_collection:addPhotoByRemoteId(
                         photo,
                         remote_id,

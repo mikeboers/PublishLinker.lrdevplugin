@@ -1,7 +1,7 @@
 local LrHttp = import 'LrHttp'
 local LrLogger = import 'LrLogger'
 
-local Utils = require 'Utils'
+local Utils = require 'utils'
 
 
 local log = LrLogger()
