@@ -1,7 +1,7 @@
 return {
     
-    LrSdkVersion = 4.0,
-    LrSdkMinimumVersion = 4.0,
+    LrSdkVersion = 5.0,
+    LrSdkMinimumVersion = 5.0,
 
     LrToolkitIdentifier = 'com.mikeboers.lightroom.publishlinker',
 
@@ -14,13 +14,9 @@ return {
             file  = "AddRemoteCollection.lua",
         },
         {
-            title = "Discover Flickr Photos",
-            file  = "DiscoverFlickrPhotos.lua",
-        },
-        {
-            title = "Dev Sandbox",
-            file  = "Sandbox.lua",
-        },
+            title = "Link Remote Photo",
+            file  = "LinkRemotePhoto.lua",
+        }
 
     },
 

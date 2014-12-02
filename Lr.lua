@@ -1,9 +1,10 @@
 
 local Lr = {}
+local meta = {}
 
-Lr._meta = {}
+setmetatable(Lr, meta)
 
-Lr._meta.__index = function(table, key)
+meta.__index = function(table, key)
     
     key = string.sub(key, 1, 1):upper() .. string.sub(key, 2)
     Lr[key] = import('Lr' .. key)

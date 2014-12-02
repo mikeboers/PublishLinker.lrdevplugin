@@ -4,6 +4,14 @@ local LrXml = import 'LrXml'
 local M = {}
 
 
+M.servicePluginNames = {
+    ["com.adobe.lightroom.export.flickr"] = 'Flickr',
+    ["com.adobe.lightroom.export.facebook"] = 'Facebook',
+    ["com.mikeboers.lightroom.export.flask"] = 'Flask',
+    ["com.mikeboers.lightroom.export.webhooks"] = 'WebHooks',
+}
+
+
 local _indent = function(n)
     return string.rep('    ', n)
 end
@@ -26,35 +34,6 @@ M.repr = function(x, depth)
     else
         return tostring(x)
     end
-end
-
-
-M.xmlToTable = function(xml)
-    
-    -- Implicitly convert to a LrXml.xmlDomInstance.
-    if type(xml) == "string" then
-        xml = LrXml.parseXml(xml)
-    end
-
-    local res = {}
-
-    -- Convert all attributes.
-    for _, attrib in pairs(xml:attributes()) do
-        res['@' .. attrib.name] = attrib.value
-    end
-
-    -- Convert all children.
-    for i = 1, xml:childCount() do
-        local child = xml:childAtIndex(i)
-
-        local childArray = res[child:name()] or {}
-        res[child:name()] = childArray
-
-        childArray[#childArray + 1] = M.xmlToTable(child)
-    end
-
-    return res
-
 end
 
 
